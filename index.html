@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VivoMath Kids</title>
+  <style>
+    :root {
+      --bg: #f6fbff;
+      --card: #ffffff;
+      --ink: #1f2a44;
+      --accent: #5b7cff;
+      --accent-2: #f7a81b;
+      --ok: #17b26a;
+      --bad: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Comic Sans MS", "Trebuchet MS", system-ui, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at top, #dff5ff, #f6fbff 60%);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .header {
+      background: linear-gradient(120deg, #6c8cff, #52d1ff);
+      color: white;
+      border-radius: 1rem;
+      padding: 1.2rem;
+      box-shadow: 0 10px 30px rgba(44, 95, 160, 0.25);
+    }
+    .header h1 { margin: 0 0 .4rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .75rem;
+      margin-top: 1rem;
+    }
+    .stat {
+      background: rgba(255,255,255,0.2);
+      padding: .6rem .8rem;
+      border-radius: .8rem;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(33, 70, 120, .12);
+    }
+    .topic-btn {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: .8rem;
+      margin-bottom: .5rem;
+      padding: .8rem;
+      background: #eef4ff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .topic-btn.active { background: #dce7ff; border: 2px solid var(--accent); }
+    .question {
+      font-size: 2rem;
+      text-align: center;
+      margin: 1rem 0;
+      line-height: 1.3;
+    }
+    .answer-row {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    input, select, button {
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    input, select {
+      border: 2px solid #d7def2;
+      border-radius: .7rem;
+      padding: .6rem .7rem;
+    }
+    .action {
+      border: 0;
+      border-radius: .7rem;
+      padding: .65rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #ecf2ff; color: var(--ink); }
+    .feedback {
+      margin-top: .9rem;
+      text-align: center;
+      font-size: 1.1rem;
+      min-height: 1.5rem;
+      font-weight: 700;
+    }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .chips { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin-top: .6rem; }
+    .chip {
+      background: #fff9e8;
+      border: 1px solid #ffe1a6;
+      border-radius: 999px;
+      padding: .35rem .7rem;
+      font-size: .9rem;
+    }
+    @media (max-width: 780px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="header">
+      <h1>🎉 VivoMath Kids</h1>
+      <div>Fun practice for age 7: ⏰ time math + ➕➖✖️ basic arithmetic.</div>
+      <div class="stats">
+        <div class="stat">⭐ Stars: <strong id="stars">0</strong></div>
+        <div class="stat">🔥 Streak: <strong id="streak">0</strong></div>
+        <div class="stat">🏆 Best Streak: <strong id="best">0</strong></div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <h3>Choose a game</h3>
+        <button class="topic-btn active" data-topic="time">⏰ Time Math</button>
+        <button class="topic-btn" data-topic="add">➕ Addition</button>
+        <button class="topic-btn" data-topic="sub">➖ Subtraction</button>
+        <button class="topic-btn" data-topic="mul">✖️ Multiplication</button>
+        <hr />
+        <label for="difficulty">Level</label>
+        <select id="difficulty">
+          <option value="1">Level 1 (Easy)</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+        </select>
+      </aside>
+
+      <article class="panel">
+        <h2 id="title">Time Math</h2>
+        <div class="question" id="question">Loading question...</div>
+
+        <div class="answer-row" id="answerRow">
+          <input id="answer" type="text" placeholder="Type answer" autocomplete="off" />
+        </div>
+
+        <div class="answer-row" style="margin-top: .8rem;">
+          <button class="action primary" id="checkBtn">Check ✅</button>
+          <button class="action secondary" id="nextBtn">Next ➡️</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+        <div class="chips" id="reward"></div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      topic: 'time',
+      difficulty: 1,
+      stars: 0,
+      streak: 0,
+      best: 0,
+      current: null
+    };
+
+    const topicNames = {
+      time: 'Time Math',
+      add: 'Addition',
+      sub: 'Subtraction',
+      mul: 'Multiplication'
+    };
+
+    const el = {
+      stars: document.getElementById('stars'),
+      streak: document.getElementById('streak'),
+      best: document.getElementById('best'),
+      title: document.getElementById('title'),
+      question: document.getElementById('question'),
+      answer: document.getElementById('answer'),
+      feedback: document.getElementById('feedback'),
+      reward: document.getElementById('reward'),
+      difficulty: document.getElementById('difficulty'),
+      buttons: [...document.querySelectorAll('.topic-btn')]
+    };
+
+    function randint(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function formatTime(totalMinutes) {
+      const mins = ((totalMinutes % 1440) + 1440) % 1440;
+      const h24 = Math.floor(mins / 60);
+      const m = mins % 60;
+      const ampm = h24 >= 12 ? 'PM' : 'AM';
+      const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
+    function generateQuestion() {
+      const lvl = state.difficulty;
+      if (state.topic === 'time') {
+        const start = randint(6 * 60, 20 * 60);
+        const step = [15, 30, 45, 60][randint(0, Math.min(3, lvl))];
+        const direction = Math.random() > 0.4 ? 1 : -1;
+        const amount = step * randint(1, lvl + 1);
+        const end = start + direction * amount;
+        return {
+          text: `${formatTime(start)} ${direction > 0 ? '+' : '-'} ${amount} min = ?\n(Write like 3:45 PM)`,
+          answer: formatTime(end).toLowerCase()
+        };
+      }
+
+      const max = lvl === 1 ? 20 : lvl === 2 ? 50 : 100;
+      const a = randint(1, max);
+      const b = state.topic === 'mul' ? randint(1, lvl === 1 ? 5 : lvl === 2 ? 9 : 12) : randint(1, max);
+      if (state.topic === 'add') return { text: `${a} + ${b} = ?`, answer: String(a + b) };
+      if (state.topic === 'sub') {
+        const hi = Math.max(a, b);
+        const lo = Math.min(a, b);
+        return { text: `${hi} - ${lo} = ?`, answer: String(hi - lo) };
+      }
+      return { text: `${a} × ${b} = ?`, answer: String(a * b) };
+    }
+
+    function drawQuestion() {
+      state.current = generateQuestion();
+      el.title.textContent = topicNames[state.topic];
+      el.question.textContent = state.current.text;
+      el.answer.value = '';
+      el.feedback.textContent = '';
+      el.feedback.className = 'feedback';
+      el.answer.focus();
+    }
+
+    function drawStats() {
+      el.stars.textContent = state.stars;
+      el.streak.textContent = state.streak;
+      el.best.textContent = state.best;
+    }
+
+    function celebrate() {
+      const msgs = ['🌟 Great job!', '🎉 Awesome!', '🚀 Super smart!', '😄 Nice work!'];
+      const msg = msgs[randint(0, msgs.length - 1)];
+      el.feedback.textContent = msg;
+      el.feedback.classList.add('ok');
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = `+1 star`;
+      el.reward.prepend(chip);
+      while (el.reward.children.length > 6) el.reward.removeChild(el.reward.lastChild);
+    }
+
+    function checkAnswer() {
+      const raw = el.answer.value.trim().toLowerCase();
+      if (!raw) return;
+
+      if (raw === state.current.answer) {
+        state.stars += 1;
+        state.streak += 1;
+        state.best = Math.max(state.best, state.streak);
+        celebrate();
+      } else {
+        state.streak = 0;
+        el.feedback.textContent = `Almost! Correct answer: ${state.current.answer}`;
+        el.feedback.classList.add('bad');
+      }
+      drawStats();
+    }
+
+    document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+    document.getElementById('nextBtn').addEventListener('click', drawQuestion);
+    el.answer.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+
+    el.difficulty.addEventListener('change', (e) => {
+      state.difficulty = Number(e.target.value);
+      drawQuestion();
+    });
+
+    el.buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        el.buttons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.topic = btn.dataset.topic;
+        drawQuestion();
+      });
+    });
+
+    drawStats();
+    drawQuestion();
+  </script>
+</body>
+</html>
